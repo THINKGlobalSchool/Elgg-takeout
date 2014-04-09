@@ -4,6 +4,9 @@ VAGRANT_HOME="/home/vagrant"
 VAGRANT_SYNC='/vagrant'
 BOOTSTRAP_ROOT="$VAGRANT_HOME/.vagrantboostrap"
 
+# Location of Spot manifest repository
+SPOT_REPO="https://github.com/THINKGlobalSchool/spotrepo.git"
+
 # Fix "stdin: is not a tty"
 # 
 # From: https://github.com/myplanetdigital/vagrant-ariadne/commit/dd0592d05d4f5c881640540fdc43d8396e00ddd7
@@ -62,15 +65,19 @@ then
 	service apache2 restart
 fi
 
+# Install repo (see: https://code.google.com/p/git-repo)
+if hash repo 2>/dev/null; then
+	echo "Notice: Repo is already installed. Moving along."
+else
+	curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > /bin/repo
+	chmod a+x /bin/repo
+fi
+
 
 # Elgg Install
 if [ ! -f "$BOOTSTRAP_ROOT/elgg" ];
 then
 	touch "$BOOTSTRAP_ROOT/elgg"
-
-	# Latest version, change this to whichever branch/tag you want
-	ELGG_BRANCH="1.8"
-	ELGG_VERSION="1.8.18"
 
 	# Elgg dirs
 	ELGG_ROOT=$VAGRANT_SYNC/elgg
@@ -79,14 +86,18 @@ then
 	# Check if elgg directory already exists, if not check it out
 	if [ ! -d "$ELGG_ROOT" ];
 	then
-		# Checkout Elgg
-		git clone -b $ELGG_BRANCH --single-branch git://github.com/Elgg/Elgg.git $ELGG_ROOT
-		git clone git://github.com/Elgg/Elgg.git $ELGG_ROOT
+		mkdir "$ELGG_ROOT"
+
+		# Switch to elgg root
+		pushd "$ELGG_ROOT" >> /dev/null
 		
-		# Get latest stable tag 
-		cd $ELGG_ROOT               # Comment out for master
-		
-		#git checkout $ELGG_VERSION  # Comment out for master
+		# Init repo
+		repo init -u $SPOT_REPO
+
+		# Sync repo
+		repo sync
+
+		popd > /dev/null
 	fi
 
 	# Set permissions on elgg directory
@@ -109,18 +120,22 @@ then
 
 	mysql -u root -proot <<< "CREATE DATABASE elgg"
 
-	php /vagrant/config_files/takeout_install.php
+	# Run install script (set up db, admin user, etc)
+	php /vagrant/elgg/mod/tgsadmin/scripts/spot_install.php
+
+	# Run init script (set up plugin order and other tasks)
+	php /vagrant/elgg/mod/tgsadmin/scripts/spot_init.php
 fi
 
 echo "*************************************"
-echo "* Elgg Takeout: Bootstrap complete! *"
+echo "* Spot Takeout: Bootstrap complete! *"
 echo "* --------------------------------- *"
 echo "*                                   *"
 echo "* Visit: http://127.0.0.1:8080      *"
 echo "*                                   *"
-echo "* Elgg Login:                       *"
+echo "* Spot Login:                       *"
 echo "* -----------                       *"
-echo "* Username: admin                   *"
-echo "* Password: administrator           *"
+echo "* Username: spotadmin               *"
+echo "* Password: admin                   *"
 echo "*                                   *"
 echo "*************************************"
