@@ -38,17 +38,17 @@ then
 	sudo apt-get update 2>/dev/null
 
 	# Need to get latest git release (http://adammonsen.com/post/665)
-	sudo apt-get install python-software-properties -y 2>/dev/null
-	sudo add-apt-repository ppa:git-core/ppa -y 2>/dev/null
+	sudo apt-get install python-software-properties -qq 2>/dev/null
+	sudo add-apt-repository ppa:git-core/ppa -qq 2>/dev/null
 	sudo apt-get update 2>/dev/null
 
 	# MySQL set root pwd
 	sudo debconf-set-selections <<< 'mysql-server-5.5  mysql-server/root_password password root'
 	sudo debconf-set-selections <<< 'mysql-server-5.5  mysql-server/root_password_again password root'
-	sudo apt-get -y install mysql-server 2>/dev/null
+	sudo apt-get install mysql-server -qq 2>/dev/null
 
 	# Install apache/php etc.
-	apt-get install vim apache2 php5 libapache2-mod-php5 php5-mysql php5-gd php5-curl curl unzip imagemagick git php-apc -y 2>/dev/null
+	apt-get install vim apache2 php5 libapache2-mod-php5 php5-mysql php5-gd php5-curl curl unzip imagemagick git php-apc -qq 2>/dev/null
 	
 	# Fix ServerName Errors
 	echo ServerName $HOSTNAME > /etc/apache2/conf.d/fqdn
@@ -90,12 +90,16 @@ then
 
 		# Switch to elgg root
 		pushd "$ELGG_ROOT" >> /dev/null
+
+		echo "Initting repo..."
 		
 		# Init repo
-		repo init -u $SPOT_REPO
+		repo init -q -u $SPOT_REPO
+
+		echo "Starting repo sync..."
 
 		# Sync repo
-		repo sync
+		repo sync -j 2 --no-clone-bundle --no-tags -q
 
 		popd > /dev/null
 	fi
@@ -106,7 +110,7 @@ then
 	# Create elgg data folder, set permissions
 	mkdir $VAGRANT_HOME/elgg
 	mkdir $ELGG_DATA_ROOT
-	chown www-data:www-data -R $ELGG_DATA_ROOT
+	chown www-data:www-data $ELGG_DATA_ROOT
 
 	# symlink ELGG_ROOT to current_root
 	ln -s $ELGG_ROOT $VAGRANT_HOME/elgg/elgg_root
@@ -125,6 +129,8 @@ then
 
 	# Run init script (set up plugin order and other tasks)
 	php /vagrant/elgg/mod/tgsadmin/scripts/spot_init.php
+
+	chown www-data:www-data -R $ELGG_DATA_ROOT
 fi
 
 echo "*************************************"
