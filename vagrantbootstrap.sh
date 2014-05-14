@@ -7,6 +7,9 @@ BOOTSTRAP_ROOT="$VAGRANT_HOME/.vagrantboostrap"
 # Location of Spot manifest repository
 SPOT_REPO="https://github.com/THINKGlobalSchool/spotrepo.git"
 
+# Location of Spot base
+SPOT_BASE="https://github.com/THINKGlobalSchool/Elgg.git"
+
 # Fix "stdin: is not a tty"
 # 
 # From: https://github.com/myplanetdigital/vagrant-ariadne/commit/dd0592d05d4f5c881640540fdc43d8396e00ddd7
@@ -59,7 +62,7 @@ then
 	sudo a2enmod expires
 
 	# Change port in ports.conf and remove NameVirtualHost line
-	sed -e '/NameVirtualHost/d' -e 's/80/8080/' /etc/apache2/ports.conf 1> $VAGRANT_HOME/ports.conf
+	sed -e '/NameVirtualHost/d' /etc/apache2/ports.conf 1> $VAGRANT_HOME/ports.conf
 	mv $VAGRANT_HOME/ports.conf /etc/apache2/ports.conf
 
 	service apache2 restart
@@ -86,7 +89,8 @@ then
 	# Check if elgg directory already exists, if not check it out
 	if [ ! -d "$ELGG_ROOT" ];
 	then
-		mkdir "$ELGG_ROOT"
+		# Checkout Spot Elgg Fork
+		git clone $SPOT_BASE $ELGG_ROOT
 
 		# Switch to elgg root
 		pushd "$ELGG_ROOT" >> /dev/null
@@ -137,11 +141,11 @@ echo "*************************************"
 echo "* Spot Takeout: Bootstrap complete! *"
 echo "* --------------------------------- *"
 echo "*                                   *"
-echo "* Visit: http://127.0.0.1:8080      *"
+echo "* Visit: http://192.168.50.50       *"
 echo "*                                   *"
 echo "* Spot Login:                       *"
 echo "* -----------                       *"
 echo "* Username: spotadmin               *"
-echo "* Password: admin                   *"
+echo "* Password: administrator           *"
 echo "*                                   *"
 echo "*************************************"

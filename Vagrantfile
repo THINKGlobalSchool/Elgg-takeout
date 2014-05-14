@@ -13,9 +13,6 @@ Vagrant.configure("2") do |config|
   # doesn't already exist on the user's system.
   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
-  # Port forwarding
-  config.vm.network :forwarded_port, host: 8080, guest: 8080 # Node
-
   # Bash Bootstrap
   config.vm.provision :shell, :path => "vagrantbootstrap.sh"
 
@@ -39,18 +36,38 @@ Vagrant.configure("2") do |config|
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
 
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
+  # Less-suck configuration modified from:
+  # http://www.stefanwrobel.com/how-to-make-vagrant-performance-not-suck
+
+  # Required for NFS to work
+  config.vm.network :private_network, ip: '192.168.50.50'
+  # Use NFS for shared folders for better performance
+  config.vm.synced_folder '.', '/vagrant', nfs: true
+  #config.vm.network :forwarded_port, host: 8080, guest: 8080 # Use for non NFS share
+
   config.vm.provider :virtualbox do |vb|
   #   # Don't boot with headless mode
   #   vb.gui = true
     vb.name = "Spot Dev"
 
-    # IMPORTANT! UPDATE MEMORY TO SUIT YOUR SYSTEM #
-    # Use VBoxManage to customize the VM. For example to change memory:
-    vb.customize ["modifyvm", :id, "--memory", "4096"] 
+    host = RbConfig::CONFIG['host_os']
+
+    # Give VM 1/3 system memory & access to all cpu cores on the host
+    if host =~ /darwin/
+      cpus = `sysctl -n hw.ncpu`.to_i
+      # sysctl returns Bytes and we need to convert to MB
+      mem = `sysctl -n hw.memsize`.to_i / 1024 / 1024 / 3
+    elsif host =~ /linux/
+      cpus = `nproc`.to_i
+      # meminfo shows KB and we need to convert to MB
+      mem = `grep 'MemTotal' /proc/meminfo | sed -e 's/MemTotal://' -e 's/ kB//'`.to_i / 1024 / 3
+    else # sorry Windows folks, I can't help you
+      cpus = 2
+      mem = 1024
+    end
+
+    vb.customize ["modifyvm", :id, "--memory", mem]
+    vb.customize ["modifyvm", :id, "--cpus", cpus]
   end
   #
   # View the documentation for the provider you're using for more

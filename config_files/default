@@ -1,7 +1,6 @@
-NameVirtualHost *:8080
-<VirtualHost *:8080>
+<VirtualHost *:80>
         ServerAdmin webmaster@localhost
-        ServerName 127.0.0.1
+        ServerName 192.168.50.50
 
         DocumentRoot /home/vagrant/elgg/elgg_root
         <Directory />
