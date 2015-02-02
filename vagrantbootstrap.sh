@@ -82,6 +82,10 @@ if [ ! -f "$BOOTSTRAP_ROOT/elgg" ];
 then
 	touch "$BOOTSTRAP_ROOT/elgg"
 
+	# Latest version, change this to whichever branch/tag you want
+	ELGG_BRANCH="1.10"
+	ELGG_VERSION="1.10"
+
 	# Elgg dirs
 	ELGG_ROOT=$VAGRANT_SYNC/elgg
 	ELGG_DATA_ROOT=$VAGRANT_HOME/elgg/elgg_data
@@ -92,34 +96,54 @@ then
 		# Checkout Spot Elgg Fork
 		git clone $SPOT_BASE $ELGG_ROOT
 
-		# Switch to elgg root
-		pushd "$ELGG_ROOT" >> /dev/null
+		# Checkout Elgg
+		git clone -b $ELGG_BRANCH --single-branch $SPOT_BASE $ELGG_ROOT
+		#git clone git://github.com/Elgg/Elgg.git $ELGG_ROOT # use this for master
 
-		echo "Initting repo..."
+		# Install Composer
+		curl -sS https://getcomposer.org/installer | php -- --filename=composer
+		mv composer /bin/composer
 		
-		# Init repo
-		repo init -q -u $SPOT_REPO
+		pushd "$ELGG_ROOT" >> /dev/null
+		
+		# Checkout our branch
+		git checkout $ELGG_BRANCH  # Comment out for master
 
-		echo "Starting repo sync..."
-
-		# Sync repo
-		repo sync -j 2 --no-clone-bundle --no-tags -q
+		# Run composer
+		composer install
 
 		popd > /dev/null
+
+
+		# !! Uncomment below to set up repo (and pull spot plugins)
+		# Switch to elgg root
+		#pushd "$ELGG_ROOT" >> /dev/null
+
+		#echo "Initting repo..."
+		
+		# Init repo
+		#repo init -q -u $SPOT_REPO
+
+		#echo "Starting repo sync..."
+
+		# Sync repo
+		#repo sync -j 2 --no-clone-bundle --no-tags -q
+
+		#popd > /dev/null
 	fi
 
 	# Set permissions on elgg directory
-	chown vagrant:vagrant -R $VAGRANT_SYNC/elgg
+	#sudo chown vagrant:vagrant -R $VAGRANT_SYNC/elgg
 
 	# Create elgg data folder, set permissions
 	mkdir $VAGRANT_HOME/elgg
 	mkdir $ELGG_DATA_ROOT
-	chown www-data:www-data $ELGG_DATA_ROOT
+	sudo chown www-data:www-data $ELGG_DATA_ROOT
 
 	# symlink ELGG_ROOT to current_root
 	ln -s $ELGG_ROOT $VAGRANT_HOME/elgg/elgg_root
 
-	cp /vagrant/config_files/default /etc/apache2/sites-available/default
+	cp /vagrant/config_files/default.conf /etc/apache2/sites-available/000-default.conf
 
 	# make a super useful phpinfo file
 	echo "<?php echo phpinfo(); ?>" > $VAGRANT_HOME/elgg/elgg_root/phpinfo.php
@@ -129,12 +153,11 @@ then
 	mysql -u root -proot <<< "CREATE DATABASE elgg"
 
 	# Run install script (set up db, admin user, etc)
-	php /vagrant/elgg/mod/tgsadmin/scripts/spot_install.php
+	echo "SETTING UP ELGG"
+	php /vagrant/config_files/takeout_install.php
 
-	# Run init script (set up plugin order and other tasks)
-	php /vagrant/elgg/mod/tgsadmin/scripts/spot_init.php
 
-	chown www-data:www-data -R $ELGG_DATA_ROOT
+	sudo chown www-data:www-data -R $ELGG_DATA_ROOT
 fi
 
 echo "*************************************"
@@ -145,7 +168,7 @@ echo "* Visit: http://192.168.50.50       *"
 echo "*                                   *"
 echo "* Spot Login:                       *"
 echo "* -----------                       *"
-echo "* Username: spotadmin               *"
+echo "* Username: admin                   *"
 echo "* Password: administrator           *"
 echo "*                                   *"
 echo "*************************************"
