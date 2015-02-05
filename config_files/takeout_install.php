@@ -16,7 +16,7 @@ $params = array(
 	// site settings
 	'sitename' => 'Elgg Vagrant',
 	'siteemail' => 'admin@localhost.local',
-	'wwwroot' => 'http://192.168.50.50/',
+	'wwwroot' => 'https://192.168.50.50/',
 	'dataroot' => '/home/vagrant/elgg/elgg_data/',
 	// admin account
 	'displayname' => 'Administrator',

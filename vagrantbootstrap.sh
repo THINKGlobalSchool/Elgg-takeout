@@ -60,6 +60,11 @@ then
 	sudo a2enmod rewrite
 	sudo a2enmod headers
 	sudo a2enmod expires
+	sudo a2enmod ssl
+
+	# Copy dev certs
+	sudo mkdir /etc/apache2/ssl
+	cp /vagrant/config_files/dev.* /etc/apache2/ssl/
 
 	# Change port in ports.conf and remove NameVirtualHost line
 	sed -e '/NameVirtualHost/d' /etc/apache2/ports.conf 1> $VAGRANT_HOME/ports.conf
@@ -117,19 +122,19 @@ then
 
 		# !! Uncomment below to set up repo (and pull spot plugins)
 		# Switch to elgg root
-		#pushd "$ELGG_ROOT" >> /dev/null
+		pushd "$ELGG_ROOT" >> /dev/null
 
-		#echo "Initting repo..."
+		echo "Initting repo..."
 		
-		# Init repo
-		#repo init -q -u $SPOT_REPO
+		Init repo
+		repo init -q -u $SPOT_REPO
 
-		#echo "Starting repo sync..."
+		echo "Starting repo sync..."
 
-		# Sync repo
-		#repo sync -j 2 --no-clone-bundle --no-tags -q
+		Sync repo
+		repo sync -j 2 --no-clone-bundle --no-tags -q
 
-		#popd > /dev/null
+		popd > /dev/null
 	fi
 
 	# Set permissions on elgg directory
@@ -164,7 +169,7 @@ echo "*************************************"
 echo "* Spot Takeout: Bootstrap complete! *"
 echo "* --------------------------------- *"
 echo "*                                   *"
-echo "* Visit: http://192.168.50.50       *"
+echo "* Visit: https://192.168.50.50      *"
 echo "*                                   *"
 echo "* Spot Login:                       *"
 echo "* -----------                       *"
